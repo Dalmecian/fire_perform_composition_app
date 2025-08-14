@@ -14,7 +14,7 @@ const FormationsPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const intervalRef = useRef<number | null>(null);
-  const [transitionDuration, setTransitionDuration] = useState(2000); // ミリ秒
+  const [transitionDuration, setTransitionDuration] = useState(2000);
   const [showPerformerManagement, setShowPerformerManagement] = useState(false);
   const [newPerformer, setNewPerformer] = useState({ name: '', position: '', color: '#8b5cf6' });
   
@@ -29,62 +29,6 @@ const FormationsPage: React.FC = () => {
   
   // 使用する隊形データを切り替え
   const activeFormations = hasUnsavedChanges ? localFormations : formations;
-  
-  // サンプル隊形データ（初期化時のみ使用）
-  /* const [formations, setFormations] = useState<Formation[]>([
-    {
-      id: '1',
-      name: '隊形①',
-      timeSeconds: 0,
-      time: '0:00',
-      description: '開始位置：中央集合',
-      positions: {
-        'A': { x: 50, y: 70, color: '#ef4444', name: '演技者A' },
-        'B': { x: 30, y: 70, color: '#3b82f6', name: '演技者B' },
-        'C': { x: 70, y: 70, color: '#10b981', name: '演技者C' },
-        'D': { x: 50, y: 50, color: '#eab308', name: '演技者D' },
-      }
-    },
-    {
-      id: '2', 
-      name: '隊形②',
-      timeSeconds: 49,
-      time: '0:49',
-      description: '展開後：横一列',
-      positions: {
-        'A': { x: 50, y: 60, color: '#ef4444', name: '演技者A' },
-        'B': { x: 20, y: 60, color: '#3b82f6', name: '演技者B' },
-        'C': { x: 80, y: 60, color: '#10b981', name: '演技者C' },
-        'D': { x: 50, y: 40, color: '#eab308', name: '演技者D' },
-      }
-    },
-    {
-      id: '3',
-      name: '隊形③',
-      timeSeconds: 155,
-      time: '2:35',
-      description: '移動中：V字形',
-      positions: {
-        'A': { x: 50, y: 30, color: '#ef4444', name: '演技者A' },
-        'B': { x: 30, y: 60, color: '#3b82f6', name: '演技者B' },
-        'C': { x: 70, y: 60, color: '#10b981', name: '演技者C' },
-        'D': { x: 50, y: 80, color: '#eab308', name: '演技者D' },
-      }
-    },
-    {
-      id: '4',
-      name: '隊形④',
-      timeSeconds: 243,
-      time: '4:03',
-      description: '最終：円形',
-      positions: {
-        'A': { x: 50, y: 20, color: '#ef4444', name: '演技者A' },
-        'B': { x: 20, y: 50, color: '#3b82f6', name: '演技者B' },
-        'C': { x: 80, y: 50, color: '#10b981', name: '演技者C' },
-        'D': { x: 50, y: 80, color: '#eab308', name: '演技者D' },
-      }
-    }
-  // ]);
 
   const currentFormation = activeFormations.find(f => f.id === selectedFormation) || activeFormations[0];
 
@@ -409,17 +353,86 @@ const FormationsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 演技者凡例 */}
+          {/* 演技者管理 */}
           <div className="bg-gray-800 rounded-lg p-4 mt-4">
-            <h4 className="text-md font-semibold mb-3">演技者</h4>
-            <div className="space-y-2">
-              {Object.values(currentFormation.positions).map((performer) => (
-                <div key={performer.name} className="flex items-center">
-                  <div 
-                    className="w-4 h-4 rounded-full mr-2"
-                    style={{ backgroundColor: performer.color }}
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-md font-semibold">演技者管理</h4>
+              <button
+                onClick={() => setShowPerformerManagement(!showPerformerManagement)}
+                className="flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors"
+              >
+                <Plus size={12} className="mr-1" />
+                追加
+              </button>
+            </div>
+            
+            {/* 演技者追加フォーム */}
+            {showPerformerManagement && (
+              <div className="mb-4 p-3 bg-gray-700 rounded">
+                <h5 className="text-sm font-medium mb-2">新しい演技者</h5>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="演技者名"
+                    value={newPerformer.name}
+                    onChange={(e) => setNewPerformer({ ...newPerformer, name: e.target.value })}
+                    className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-sm"
                   />
-                  <span className="text-sm">{performer.name}</span>
+                  <input
+                    type="text"
+                    placeholder="ポジション"
+                    value={newPerformer.position}
+                    onChange={(e) => setNewPerformer({ ...newPerformer, position: e.target.value })}
+                    className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-sm"
+                  />
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {colorOptions.map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setNewPerformer({ ...newPerformer, color })}
+                        className="w-6 h-6 rounded"
+                        style={{ 
+                          backgroundColor: color,
+                          border: newPerformer.color === color ? '2px solid white' : '1px solid gray'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setShowPerformerManagement(false)}
+                      className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded transition-colors"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={handleAddPerformer}
+                      className="px-2 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded transition-colors"
+                    >
+                      追加
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 演技者一覧 */}
+            <div className="space-y-2">
+              {performers.map((performer) => (
+                <div key={performer.id} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div 
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{ backgroundColor: performer.color }}
+                    />
+                    <span className="text-sm">{performer.name}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeletePerformer(performer.id)}
+                    className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <Trash2 size={12} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -542,6 +555,151 @@ const FormationsPage: React.FC = () => {
               </div>
             </div>
 
+            {/* タイムライン制御 */}
+            <div className="mt-4 bg-gray-700 rounded-lg p-4">
+              {/* 再生制御 */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={previousFormation}
+                      className="p-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+                      disabled={formations.findIndex(f => f.id === selectedFormation) === 0}
+                    >
+                      <SkipBack size={16} />
+                    </button>
+                    <button 
+                      onClick={toggleAutoPlay}
+                      className={`p-2 rounded transition-colors ${
+                        isAutoPlaying ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'
+                      }`}
+                    >
+                      {isAutoPlaying ? <Pause size={16} /> : <Play size={16} />}
+                    </button>
+                    <button 
+                      onClick={resetAutoPlay}
+                      className="p-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+                    >
+                      <RotateCcw size={16} />
+                    </button>
+                    <button 
+                      onClick={nextFormation}
+                      className="p-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+                      disabled={formations.findIndex(f => f.id === selectedFormation) === formations.length - 1}
+                    >
+                      <SkipForward size={16} />
+                    </button>
+                  </div>
+                  
+                  {/* 現在時間表示 */}
+                  <div className="flex items-center space-x-2">
+                    <Clock size={16} className="text-blue-400" />
+                    <span className="font-mono text-blue-400">{formatTime(currentTime)}</span>
+                  </div>
+                </div>
+                
+                {/* 再生速度調整 */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-400">速度:</span>
+                  <select
+                    value={playbackSpeed}
+                    onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                    className="px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-sm"
+                    disabled={isAutoPlaying}
+                  >
+                    <option value={0.5}>0.5x</option>
+                    <option value={1}>1x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* タイムラインバー */}
+              <div className="mb-4">
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>0:00</span>
+                  <span>{formatTime(Math.max(...formations.map(f => f.timeSeconds)) + 5)}</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="range"
+                    min="0"
+                    max={Math.max(...formations.map(f => f.timeSeconds)) + 5}
+                    value={currentTime}
+                    onChange={(e) => {
+                      const time = parseFloat(e.target.value);
+                      setCurrentTime(time);
+                      const formation = findCurrentFormation(time);
+                      setSelectedFormation(formation.id);
+                    }}
+                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                    disabled={isAutoPlaying}
+                  />
+                  
+                  {/* 隊形マーカー */}
+                  {formations.map((formation, index) => {
+                    const maxTime = Math.max(...formations.map(f => f.timeSeconds)) + 5;
+                    const position = (formation.timeSeconds / maxTime) * 100;
+                    return (
+                      <div
+                        key={formation.id}
+                        className="absolute top-0 transform -translate-x-1/2"
+                        style={{ left: `${position}%` }}
+                      >
+                        <div className="w-3 h-6 bg-blue-500 rounded-sm cursor-pointer hover:bg-blue-400 transition-colors"
+                             title={`${formation.name} - ${formation.time}`}
+                             onClick={() => {
+                               if (!isAutoPlaying) {
+                                 setCurrentTime(formation.timeSeconds);
+                                 setSelectedFormation(formation.id);
+                               }
+                             }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 隊形遷移リスト */}
+              <div className="mb-4">
+                <h5 className="text-sm font-semibold text-gray-300 mb-2">隊形遷移</h5>
+                <div className="flex flex-wrap gap-2">
+                  {formations.map((formation) => (
+                    <button
+                      key={formation.id}
+                      onClick={() => {
+                        if (!isAutoPlaying) {
+                          setCurrentTime(formation.timeSeconds);
+                          setSelectedFormation(formation.id);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded text-xs transition-colors ${
+                        formation.id === selectedFormation
+                          ? 'bg-blue-600 text-white'
+                          : isAutoPlaying
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                      }`}
+                      disabled={isAutoPlaying}
+                    >
+                      {formation.name} ({formation.time})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 状態表示 */}
+              {isAutoPlaying && (
+                <div className="p-2 bg-green-800 rounded text-sm">
+                  <span className="text-green-300">🟢 自動再生中:</span>
+                  <span className="ml-2">{currentFormation.name} → </span>
+                  <span>{findNextFormation(currentFormation)?.name || '終了'}</span>
+                </div>
+              )}
+            </div>
+
             {/* 隊形の説明 */}
             <div className={`mt-4 p-3 rounded-lg ${
               isEditMode ? 'bg-orange-800' : 'bg-gray-700'
@@ -564,152 +722,6 @@ const FormationsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* タイムライン制御 */}
-      <div className="bg-gray-800 rounded-lg p-4">
-        <h4 className="text-md font-semibold mb-4">隊形タイムライン制御</h4>
-        
-        {/* 再生制御 */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              <button 
-                onClick={previousFormation}
-                className="p-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
-                disabled={formations.findIndex(f => f.id === selectedFormation) === 0}
-              >
-                <SkipBack size={16} />
-              </button>
-              <button 
-                onClick={toggleAutoPlay}
-                className={`p-2 rounded transition-colors ${
-                  isAutoPlaying ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'
-                }`}
-              >
-                {isAutoPlaying ? <Pause size={16} /> : <Play size={16} />}
-              </button>
-              <button 
-                onClick={resetAutoPlay}
-                className="p-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
-              >
-                <RotateCcw size={16} />
-              </button>
-              <button 
-                onClick={nextFormation}
-                className="p-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
-                disabled={formations.findIndex(f => f.id === selectedFormation) === formations.length - 1}
-              >
-                <SkipForward size={16} />
-              </button>
-            </div>
-            
-            {/* 現在時間表示 */}
-            <div className="flex items-center space-x-2">
-              <Clock size={16} className="text-blue-400" />
-              <span className="font-mono text-blue-400">{formatTime(currentTime)}</span>
-            </div>
-          </div>
-          
-          {/* 再生速度調整 */}
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-400">速度:</span>
-            <select
-              value={playbackSpeed}
-              onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
-              className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-              disabled={isAutoPlaying}
-            >
-              <option value={0.5}>0.5x</option>
-              <option value={1}>1x</option>
-              <option value={1.5}>1.5x</option>
-              <option value={2}>2x</option>
-            </select>
-          </div>
-        </div>
-        
-        {/* タイムラインバー */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>0:00</span>
-            <span>{formatTime(Math.max(...formations.map(f => f.timeSeconds)) + 5)}</span>
-          </div>
-          <div className="relative">
-            <input
-              type="range"
-              min="0"
-              max={Math.max(...formations.map(f => f.timeSeconds)) + 5}
-              value={currentTime}
-              onChange={(e) => {
-                const time = parseFloat(e.target.value);
-                setCurrentTime(time);
-                const formation = findCurrentFormation(time);
-                setSelectedFormation(formation.id);
-              }}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              disabled={isAutoPlaying}
-            />
-            
-            {/* 隊形マーカー */}
-            {formations.map((formation, index) => {
-              const maxTime = Math.max(...formations.map(f => f.timeSeconds)) + 5;
-              const position = (formation.timeSeconds / maxTime) * 100;
-              return (
-                <div
-                  key={formation.id}
-                  className="absolute top-0 transform -translate-x-1/2"
-                  style={{ left: `${position}%` }}
-                >
-                  <div className="w-3 h-6 bg-blue-500 rounded-sm cursor-pointer hover:bg-blue-400 transition-colors"
-                       title={`${formation.name} - ${formation.time}`}
-                       onClick={() => {
-                         if (!isAutoPlaying) {
-                           setCurrentTime(formation.timeSeconds);
-                           setSelectedFormation(formation.id);
-                         }
-                       }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        
-        {/* 隊形遷移リスト */}
-        <div className="space-y-2">
-          <h5 className="text-sm font-semibold text-gray-300">隊形遷移</h5>
-          <div className="flex flex-wrap gap-2">
-            {formations.map((formation) => (
-              <button
-                key={formation.id}
-                onClick={() => {
-                  if (!isAutoPlaying) {
-                    setCurrentTime(formation.timeSeconds);
-                    setSelectedFormation(formation.id);
-                  }
-                }}
-                className={`px-3 py-1 rounded text-xs transition-colors ${
-                  formation.id === selectedFormation
-                    ? 'bg-blue-600 text-white'
-                    : isAutoPlaying
-                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-                disabled={isAutoPlaying}
-              >
-                {formation.name} ({formation.time})
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* 状態表示 */}
-        {isAutoPlaying && (
-          <div className="mt-4 p-2 bg-green-800 rounded text-sm">
-            <span className="text-green-300">🟢 自動再生中:</span>
-            <span className="ml-2">{currentFormation.name} → </span>
-            <span>{findNextFormation(currentFormation)?.name || '終了'}</span>
-          </div>
-        )}
-      </div>
     </div>
   );
 };

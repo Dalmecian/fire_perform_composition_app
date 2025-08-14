@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, SkipBack, SkipForward, Clock, Music, Download, Volume2, VolumeX, Edit3, Plus, Save, X, Trash2, Settings, Palette } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipBack, SkipForward, Clock, Music, Volume2, VolumeX, Edit3, Plus, X, Trash2, Settings, Palette } from 'lucide-react';
 
 const App = () => {
   // 演技データ（最新のExcelファイルから抽出、動き名列を表示名として使用）
@@ -49,7 +49,7 @@ const App = () => {
   const [announcedMoves, setAnnouncedMoves] = useState(new Set());
   const [performanceDataState, setPerformanceDataState] = useState(performanceData);
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [musicVolume, setMusicVolume] = useState(0.5);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicDuration, setMusicDuration] = useState(0);
@@ -397,7 +397,7 @@ const App = () => {
   const fontSizeClass = getFontSizeClass();
 
   // 次の振り付けの3秒前チェック
-  const checkUpcomingMove = (currentTime) => {
+  const checkUpcomingMove = (currentTime: number) => {
     const nextMove = performanceDataState.find(move => 
       move.timeSeconds > currentTime && 
       move.timeSeconds - currentTime <= 3 &&
@@ -412,7 +412,7 @@ const App = () => {
   };
 
   // 現在の時間に基づいて適切な演技を見つける
-  const findCurrentPerformance = (time) => {
+  const findCurrentPerformance = (time: number) => {
     for (let i = performanceDataState.length - 1; i >= 0; i--) {
       if (time >= performanceDataState[i].timeSeconds) {
         return i;

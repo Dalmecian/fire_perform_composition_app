@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, Eye, Music, Settings } from 'lucide-react';
+import { Clock, Eye, Music, Settings } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,8 +10,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
 
   const navigationItems = [
-    { path: '/', label: '全体タイムライン', icon: Home },
-    { path: '/performers', label: '演技者別', icon: Users },
+    { path: '/', label: '演技タイムライン', icon: Clock },
     { path: '/formations', label: '隊形', icon: Eye },
     { path: '/music', label: '楽曲管理', icon: Music },
   ];
