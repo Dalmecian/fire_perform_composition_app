@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw, Users, User, Eye, EyeOff, Clock, Volume2, Plus, Trash2, Edit3, Save, X } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, RotateCcw, Users, User, Eye, EyeOff, Clock, Volume2, Plus, Trash2, Edit3, Save, X, Download, Upload } from 'lucide-react';
 import { usePerformers } from '../contexts/PerformersContext';
 
 const TimelinePage: React.FC = () => {
@@ -38,6 +38,7 @@ const TimelinePage: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<number | null>(null);
   const lastSpokenIndexRef = useRef<number>(-1);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 音声読み上げ設定
   const speakText = (text: string) => {
@@ -334,6 +335,261 @@ const TimelinePage: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // CSV エクスポート（全演技者）
+  const exportAllToCSV = () => {
+    const csvData = [
+      ['演技者ID', '演技者名', 'ポジション', 'カラー', '時間', '時間（秒）', '楽曲・セクション', '隊形', '動作', '動作詳細']
+    ];
+
+    performanceActions.forEach(action => {
+      if (action.performerIds && action.performerIds.length > 0) {
+        action.performerIds.forEach(performerId => {
+          const performer = performers.find(p => p.id === performerId);
+          if (performer) {
+            csvData.push([
+              performer.id,
+              performer.name,
+              performer.position,
+              performer.color,
+              action.time,
+              action.timeSeconds.toString(),
+              action.lyrics,
+              action.formation,
+              action.action,
+              action.actionDetail
+            ]);
+          }
+        });
+      } else {
+        // 全演技者対象のアクション
+        performers.forEach(performer => {
+          csvData.push([
+            performer.id,
+            performer.name,
+            performer.position,
+            performer.color,
+            action.time,
+            action.timeSeconds.toString(),
+            action.lyrics,
+            action.formation,
+            action.action,
+            action.actionDetail
+          ]);
+        });
+      }
+    });
+
+    downloadCSV(csvData, 'all_performers_timeline.csv');
+  };
+
+  // CSV エクスポート（個別演技者）
+  const exportPerformerToCSV = (performerId: string) => {
+    const performer = performers.find(p => p.id === performerId);
+    if (!performer) return;
+
+    const performerActions = getPerformerSpecificActions(performerId);
+    const csvData = [
+      ['時間', '時間（秒）', '楽曲・セクション', '隊形', '動作', '動作詳細']
+    ];
+
+    performerActions.forEach(action => {
+      csvData.push([
+        action.time,
+        action.timeSeconds.toString(),
+        action.lyrics,
+        action.formation,
+        action.action,
+        action.actionDetail
+      ]);
+    });
+
+    downloadCSV(csvData, `${performer.name}_timeline.csv`);
+  };
+
+  // CSV ダウンロード関数
+  const downloadCSV = (data: string[][], filename: string) => {
+    const csvContent = data.map(row => 
+      row.map(field => `"${field.replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    const BOM = '\uFEFF'; // UTF-8 BOM for Excel compatibility
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // CSV インポート関数
+  const importCSV = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        
+        if (lines.length < 2) {
+          alert('CSVファイルにデータが見つかりません。');
+          return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+        
+        // ヘッダー検証
+        const expectedHeaders = ['演技者ID', '演技者名', 'ポジション', 'カラー', '時間', '時間（秒）', '楽曲・セクション', '隊形', '動作', '動作詳細'];
+        const isFullFormat = expectedHeaders.every(h => headers.includes(h));
+        
+        if (!isFullFormat) {
+          // 個別演技者フォーマットかチェック
+          const individualHeaders = ['時間', '時間（秒）', '楽曲・セクション', '隊形', '動作', '動作詳細'];
+          const isIndividualFormat = individualHeaders.every(h => headers.includes(h));
+          
+          if (!isIndividualFormat) {
+            alert('CSVファイルのフォーマットが正しくありません。');
+            return;
+          }
+          
+          // 個別演技者フォーマットのインポート
+          importIndividualPerformerCSV(lines, headers);
+        } else {
+          // 全演技者フォーマットのインポート
+          importAllPerformersCSV(lines, headers);
+        }
+      } catch (error) {
+        console.error('CSV import error:', error);
+        alert('CSVファイルの読み込みでエラーが発生しました。');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
+  // 全演技者CSVインポート
+  const importAllPerformersCSV = (lines: string[], headers: string[]) => {
+    const newActions: any[] = [];
+    const newPerformers: any[] = [];
+    const performerMap = new Map();
+
+    lines.slice(1).forEach((line, index) => {
+      const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+      const row: any = {};
+      
+      headers.forEach((header, i) => {
+        row[header] = values[i] || '';
+      });
+
+      // 演技者情報を保存
+      if (row['演技者ID'] && !performerMap.has(row['演技者ID'])) {
+        performerMap.set(row['演技者ID'], {
+          id: row['演技者ID'],
+          name: row['演技者名'],
+          position: row['ポジション'],
+          color: row['カラー'] || '#8b5cf6'
+        });
+      }
+
+      // アクション情報
+      const timeSeconds = parseInt(row['時間（秒）']) || 0;
+      const existingAction = newActions.find(a => 
+        a.timeSeconds === timeSeconds && 
+        a.action === row['動作']
+      );
+
+      if (existingAction) {
+        // 既存のアクションに演技者を追加
+        if (!existingAction.performerIds.includes(row['演技者ID'])) {
+          existingAction.performerIds.push(row['演技者ID']);
+        }
+      } else {
+        // 新しいアクションを追加
+        newActions.push({
+          timeSeconds,
+          time: row['時間'],
+          lyrics: row['楽曲・セクション'],
+          formation: row['隊形'],
+          action: row['動作'],
+          actionDetail: row['動作詳細'],
+          performerIds: [row['演技者ID']]
+        });
+      }
+    });
+
+    // 演技者を追加
+    performerMap.forEach(performer => {
+      const existingPerformer = performers.find(p => p.id === performer.id);
+      if (!existingPerformer) {
+        addPerformer(performer);
+      }
+    });
+
+    // アクションを追加
+    newActions.forEach(action => {
+      addPerformanceAction(action);
+    });
+
+    alert(`CSVファイルから ${performerMap.size} 人の演技者と ${newActions.length} 個のアクションをインポートしました。`);
+  };
+
+  // 個別演技者CSVインポート
+  const importIndividualPerformerCSV = (lines: string[], headers: string[]) => {
+    if (selectedPerformers.length !== 1) {
+      alert('個別演技者のCSVをインポートするには、演技者を1人だけ選択してください。');
+      return;
+    }
+
+    const performerId = selectedPerformers[0];
+    const newActions: any[] = [];
+
+    lines.slice(1).forEach(line => {
+      const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+      const row: any = {};
+      
+      headers.forEach((header, i) => {
+        row[header] = values[i] || '';
+      });
+
+      const timeSeconds = parseInt(row['時間（秒）']) || 0;
+      newActions.push({
+        timeSeconds,
+        time: row['時間'],
+        lyrics: row['楽曲・セクション'],
+        formation: row['隊形'],
+        action: row['動作'],
+        actionDetail: row['動作詳細'],
+        performerIds: [performerId]
+      });
+    });
+
+    // アクションを追加
+    newActions.forEach(action => {
+      addPerformanceAction(action);
+    });
+
+    alert(`${newActions.length} 個のアクションをインポートしました。`);
+  };
+
+  // ファイル選択トリガー
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  // ファイル選択ハンドラー
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'text/csv') {
+      importCSV(file);
+    } else {
+      alert('CSVファイルを選択してください。');
+    }
+    // ファイル入力をリセット
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // 自動進行チェック
   useEffect(() => {
     if (isPlaying && currentAction) {
@@ -410,6 +666,20 @@ const TimelinePage: React.FC = () => {
             >
               <Plus size={14} className="mr-1" />
               演技者追加
+            </button>
+            <button
+              onClick={triggerFileInput}
+              className="flex items-center px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded transition-colors"
+            >
+              <Upload size={14} className="mr-1" />
+              CSVインポート
+            </button>
+            <button
+              onClick={exportAllToCSV}
+              className="flex items-center px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded transition-colors"
+            >
+              <Download size={14} className="mr-1" />
+              全体エクスポート
             </button>
             <button
               onClick={toggleAllPerformers}
@@ -573,6 +843,13 @@ const TimelinePage: React.FC = () => {
                         title="編集"
                       >
                         <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => exportPerformerToCSV(performer.id)}
+                        className="p-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+                        title="個別エクスポート"
+                      >
+                        <Download size={14} />
                       </button>
                       <button
                         onClick={() => handleDeletePerformer(performer.id)}
@@ -1079,6 +1356,15 @@ const TimelinePage: React.FC = () => {
 
       {/* 音楽プレーヤー（非表示） */}
       <audio ref={audioRef} />
+      
+      {/* CSVファイル入力（非表示） */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
     </div>
   );
 };
