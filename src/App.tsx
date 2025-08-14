@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, SkipBack, SkipForward, Clock, Music, Upload, Download, Volume2, VolumeX, Edit3, Plus, Save, X, Trash2, Settings, Palette } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipBack, SkipForward, Clock, Music, Download, Volume2, VolumeX, Edit3, Plus, Save, X, Trash2, Settings, Palette } from 'lucide-react';
 
 const App = () => {
   // 演技データ（最新のExcelファイルから抽出、動き名列を表示名として使用）
@@ -48,7 +48,7 @@ const App = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [announcedMoves, setAnnouncedMoves] = useState(new Set());
   const [performanceDataState, setPerformanceDataState] = useState(performanceData);
-  const [audioFile, setAudioFile] = useState(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [musicVolume, setMusicVolume] = useState(0.5);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
@@ -71,13 +71,13 @@ const App = () => {
     showDetails: true,
     compactMode: false
   });
-  const intervalRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const audioInputRef = useRef(null);
-  const audioRef = useRef(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // 音声読み上げ機能
-  const speakText = (text) => {
+  const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
       // 既存の読み上げを停止
       window.speechSynthesis.cancel();
@@ -92,7 +92,7 @@ const App = () => {
   };
 
   // CSVエクスポート機能
-  const exportToCSV = () => {
+  const exportToCSV = (): void => {
     const csvHeaders = ['時間', '時間（秒）', '歌詞', '隊形', '動き', '動き詳細'];
     const csvData = [csvHeaders];
     
@@ -123,21 +123,21 @@ const App = () => {
   };
 
   // CSVインポート機能
-  const handleCSVImport = (event) => {
-    const file = event.target.files[0];
+  const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
     if (!file) return;
     
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const csvText = e.target.result;
-        const lines = csvText.split('\n');
-        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+        const csvText = e.target && typeof e.target.result === 'string' ? e.target.result : '';
+        const lines = csvText ? csvText.split('\n') : [];
+        const headers = lines[0]?.split(',').map((h: string) => h.replace(/"/g, '').trim());
         
         // ヘッダーの確認
         const expectedHeaders = ['時間', '時間（秒）', '歌詞', '隊形', '動き', '動き詳細'];
         const isValidFormat = expectedHeaders.every(header => 
-          headers.some(h => h === header)
+          headers.some((h: string) => h === header)
         );
         
         if (!isValidFormat) {
@@ -206,18 +206,18 @@ const App = () => {
   };
 
   // ファイル選択ダイアログを開く
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+  const triggerFileInput = (): void => {
+  if (fileInputRef.current) fileInputRef.current.click();
   };
 
   // 音楽ファイル選択ダイアログを開く
-  const triggerAudioInput = () => {
-    audioInputRef.current?.click();
+  const triggerAudioInput = (): void => {
+  if (audioInputRef.current) audioInputRef.current.click();
   };
 
   // 音楽ファイルのアップロード処理
-  const handleAudioUpload = (event) => {
-    const file = event.target.files[0];
+  const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
     if (!file) return;
     
     // 音楽ファイルの形式チェック
@@ -229,8 +229,10 @@ const App = () => {
     
     // 既存の音楽を停止
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     }
     
     // 前のURLを解放
@@ -240,7 +242,7 @@ const App = () => {
     
     const url = URL.createObjectURL(file);
     setAudioFile(file);
-    setAudioUrl(url);
+  setAudioUrl(url as string | null);
     setIsMusicPlaying(false);
     
     // 音楽の情報を取得
@@ -314,7 +316,7 @@ const App = () => {
   };
 
   // 編集開始
-  const startEdit = (index) => {
+  const startEdit = (index: number) => {
     setEditingIndex(index);
     setEditingData({...performanceDataState[index]});
   };
@@ -345,30 +347,11 @@ const App = () => {
   };
 
   // 項目削除
-  const deleteItem = (index) => {
+  const deleteItem = (index: number) => {
     if (window.confirm('この項目を削除しますか？')) {
       const newData = performanceDataState.filter((_, i) => i !== index);
       setPerformanceDataState(newData);
-      if (editingIndex === index) {
-        setEditingIndex(-1);
-      }
     }
-  };
-
-  // 編集データの更新
-  const updateEditingData = (field, value) => {
-    setEditingData({
-      ...editingData,
-      [field]: value
-    });
-  };
-
-  // 表示設定の更新
-  const updateDisplaySettings = (key, value) => {
-    setDisplaySettings({
-      ...displaySettings,
-      [key]: value
-    });
   };
 
   // テーマクラスの取得
@@ -467,7 +450,7 @@ const App = () => {
   }, [isPlaying, announcedMoves]);
 
   // 時間を mm:ss 形式に変換
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -481,11 +464,13 @@ const App = () => {
     // 音楽も同期して再生/停止
     if (audioRef.current && audioUrl) {
       if (newIsPlaying) {
-        audioRef.current.currentTime = currentTime;
-        audioRef.current.play();
+        if (audioRef.current) {
+          audioRef.current.currentTime = currentTime;
+          audioRef.current.play();
+        }
         setIsMusicPlaying(true);
       } else {
-        audioRef.current.pause();
+  if (audioRef.current) audioRef.current.pause();
         setIsMusicPlaying(false);
       }
     }
@@ -502,8 +487,10 @@ const App = () => {
     
     // 音楽もリセット
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     }
   };
 
@@ -526,7 +513,7 @@ const App = () => {
   };
 
   // 特定の時間に移動
-  const jumpToTime = (index) => {
+  const jumpToTime = (index: number) => {
     const newTime = performanceDataState[index].timeSeconds;
     setCurrentIndex(index);
     setCurrentTime(newTime);
@@ -540,7 +527,7 @@ const App = () => {
     setAnnouncedMoves(prev => {
       const newSet = new Set();
       prev.forEach(time => {
-        if (time <= newTime) {
+  if (typeof time === 'number' && time <= newTime) {
           newSet.add(time);
         }
       });
@@ -556,6 +543,22 @@ const App = () => {
 
   const currentPerformance = performanceDataState[currentIndex];
   const nextPerformance = currentIndex < performanceDataState.length - 1 ? performanceDataState[currentIndex + 1] : null;
+
+  // displaySettingsの更新関数
+  const updateDisplaySettings = (
+    field: keyof typeof displaySettings,
+    value: string | boolean
+  ) => {
+    setDisplaySettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // editingDataの更新関数
+  const updateEditingData = (
+    field: keyof typeof editingData,
+    value: string | number
+  ) => {
+    setEditingData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className={`text-white ${getFontSizeClass()}`}>
@@ -579,6 +582,7 @@ const App = () => {
                 value={displaySettings.fontSize}
                 onChange={(e) => updateDisplaySettings('fontSize', e.target.value)}
                 className={`w-full px-3 py-2 ${themeClasses.secondary} border border-gray-600 rounded text-white`}
+                title="フォントサイズ選択"
               >
                 <option value="small">小</option>
                 <option value="normal">標準</option>
@@ -593,6 +597,7 @@ const App = () => {
                 value={displaySettings.theme}
                 onChange={(e) => updateDisplaySettings('theme', e.target.value)}
                 className={`w-full px-3 py-2 ${themeClasses.secondary} border border-gray-600 rounded text-white`}
+                title="テーマ選択"
               >
                 <option value="dark">ダーク</option>
                 <option value="blue">ブルー</option>
@@ -652,6 +657,7 @@ const App = () => {
               onClick={previousMove}
               className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
               disabled={currentIndex === 0 || isEditMode}
+              title="前の振り付け"
             >
               <SkipBack size={20} />
             </button>
@@ -659,6 +665,7 @@ const App = () => {
               onClick={togglePlay}
               className="p-3 bg-blue-600 hover:bg-blue-500 rounded-full transition-colors"
               disabled={isEditMode}
+              title={isPlaying ? "一時停止" : "再生"}
             >
               {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </button>
@@ -666,6 +673,7 @@ const App = () => {
               onClick={nextMove}
               className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
               disabled={currentIndex === performanceDataState.length - 1 || isEditMode}
+              title="次の振り付け"
             >
               <SkipForward size={20} />
             </button>
@@ -673,6 +681,7 @@ const App = () => {
               onClick={reset}
               className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
               disabled={isEditMode}
+              title="リセット"
             >
               <RotateCcw size={20} />
             </button>
@@ -683,6 +692,7 @@ const App = () => {
                   ? 'bg-orange-600 hover:bg-orange-500 text-white' 
                   : 'bg-gray-700 hover:bg-gray-600 text-white'
               }`}
+              title={isEditMode ? "編集モード終了" : "編集モード開始"}
             >
               <Edit3 size={20} />
             </button>
@@ -693,6 +703,7 @@ const App = () => {
                   ? 'bg-purple-600 hover:bg-purple-500 text-white' 
                   : 'bg-gray-700 hover:bg-gray-600 text-white'
               }`}
+              title="表示設定"
             >
               <Settings size={20} />
             </button>
@@ -724,18 +735,20 @@ const App = () => {
                   value={musicVolume}
                   onChange={handleVolumeChange}
                   className="w-16 h-2 bg-purple-600 rounded-lg appearance-none cursor-pointer"
+                  title="音量調整"
                 />
                 <span className="text-xs text-purple-300 w-8">{Math.round(musicVolume * 100)}%</span>
               </div>
               
               {/* 音楽再生ボタン */}
               <button
-                onClick={toggleMusic}
-                className="p-2 bg-purple-600 hover:bg-purple-500 rounded-full transition-colors"
-                disabled={!audioUrl}
-              >
-                {isMusicPlaying ? <Pause size={18} /> : <Play size={18} />}
-              </button>
+           onClick={toggleMusic}
+           className="p-2 bg-purple-600 hover:bg-purple-500 rounded-full transition-colors"
+           disabled={!audioUrl}
+           title={isMusicPlaying ? "音楽一時停止" : "音楽再生"}
+          >
+            {isMusicPlaying ? <Pause size={18} /> : <Play size={18} />}
+          </button>
             </div>
           </div>
           
@@ -839,7 +852,6 @@ const App = () => {
           {performanceDataState.map((item, index) => (
             <div key={index}>
               {editingIndex === index ? (
-                // 編集モード
                 <div className="p-4 bg-orange-800 rounded-lg border-l-4 border-orange-400">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -904,13 +916,11 @@ const App = () => {
                       onClick={saveEdit}
                       className="flex items-center px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded transition-colors"
                     >
-                      <Save size={14} className="mr-1" />
                       保存
                     </button>
                   </div>
                 </div>
               ) : (
-                // 通常表示モード
                 <div
                   className={`p-3 rounded transition-colors ${
                     index === currentIndex 
@@ -939,6 +949,7 @@ const App = () => {
                               startEdit(index);
                             }}
                             className="p-1 bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors"
+                            title="編集"
                           >
                             <Edit3 size={12} />
                           </button>
@@ -948,6 +959,7 @@ const App = () => {
                               deleteItem(index);
                             }}
                             className="p-1 bg-red-600 hover:bg-red-500 text-white rounded transition-colors"
+                            title="削除"
                           >
                             <Trash2 size={12} />
                           </button>
@@ -960,67 +972,6 @@ const App = () => {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* 使い方の説明 */}
-      <div className="bg-gray-800 rounded-lg p-4 mb-6">
-        <h4 className="font-bold mb-2 text-gray-300">使い方:</h4>
-        <ul className="text-sm text-gray-400 space-y-1">
-          <li>• 再生ボタンで音楽に合わせたタイマーを開始</li>
-          <li>• タイムラインをクリックして特定の振り付けに移動</li>
-          <li>• 現在の振り付けが緑色で、次の振り付けが青色で表示されます</li>
-          <li>• 矢印ボタンで前後の振り付けに移動できます</li>
-          <li>• 🔊 次の振り付けの3秒前に音声で動きを読み上げます</li>
-          <li>• 🎵 音楽アップロードで楽曲と同期再生</li>
-          <li>• ✏️ 編集ボタンで演技データの追加・編集・削除が可能</li>
-        </ul>
-      </div>
-
-      {/* フッター - データ管理 */}
-      <div className="bg-gray-800 rounded-lg p-4 border-t-4 border-blue-500">
-        <div className="flex justify-between items-center">
-          <div>
-            <h4 className="font-bold text-gray-300 mb-1">データ管理</h4>
-            <p className="text-xs text-gray-500">演技タイムラインをCSVファイルや音楽ファイルで管理できます</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={triggerAudioInput}
-              className="flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors shadow-md"
-            >
-              <Music size={16} className="mr-1" />
-              音楽アップロード
-            </button>
-            <button
-              onClick={triggerFileInput}
-              className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors shadow-md"
-            >
-              <Upload size={16} className="mr-1" />
-              CSVインポート
-            </button>
-            <button
-              onClick={exportToCSV}
-              className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors shadow-md"
-            >
-              <Download size={16} className="mr-1" />
-              CSVエクスポート
-            </button>
-          </div>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          onChange={handleCSVImport}
-          style={{ display: 'none' }}
-        />
-        <input
-          ref={audioInputRef}
-          type="file"
-          accept="audio/*"
-          onChange={handleAudioUpload}
-          style={{ display: 'none' }}
-        />
       </div>
     </div>
   );
