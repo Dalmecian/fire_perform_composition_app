@@ -37,6 +37,9 @@ interface PerformersContextType {
   addPerformerToFormations: (performer: Performer) => void;
   removePerformerFromFormations: (performerId: string) => void;
   getPerformerActions: (performerId: string) => PerformanceAction[];
+  addPerformanceAction: (action: Omit<PerformanceAction, 'id'>) => void;
+  updatePerformanceAction: (index: number, updates: Partial<PerformanceAction>) => void;
+  deletePerformanceAction: (index: number) => void;
 }
 
 const PerformersContext = createContext<PerformersContextType | undefined>(undefined);
@@ -231,6 +234,25 @@ export const PerformersProvider: React.FC<{ children: ReactNode }> = ({ children
     );
   };
 
+  // パフォーマンスアクションの追加
+  const addPerformanceAction = (action: Omit<PerformanceAction, 'id'>) => {
+    setPerformanceActions(prev => [...prev, action as PerformanceAction].sort((a, b) => a.timeSeconds - b.timeSeconds));
+  };
+
+  // パフォーマンスアクションの更新
+  const updatePerformanceAction = (index: number, updates: Partial<PerformanceAction>) => {
+    setPerformanceActions(prev => {
+      const newActions = [...prev];
+      newActions[index] = { ...newActions[index], ...updates };
+      return newActions.sort((a, b) => a.timeSeconds - b.timeSeconds);
+    });
+  };
+
+  // パフォーマンスアクションの削除
+  const deletePerformanceAction = (index: number) => {
+    setPerformanceActions(prev => prev.filter((_, i) => i !== index));
+  };
+
   const value: PerformersContextType = {
     performers,
     formations,
@@ -241,7 +263,10 @@ export const PerformersProvider: React.FC<{ children: ReactNode }> = ({ children
     updateFormation,
     addPerformerToFormations,
     removePerformerFromFormations,
-    getPerformerActions
+    getPerformerActions,
+    addPerformanceAction,
+    updatePerformanceAction,
+    deletePerformanceAction
   };
 
   return (
