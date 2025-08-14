@@ -1,0 +1,40 @@
+{
+  "package.json": {
+    "name": "dance-practice-app",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+      "preview": "vite preview"
+    },
+    "dependencies": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0",
+      "lucide-react": "^0.263.1"
+    },
+    "devDependencies": {
+      "@types/react": "^18.2.15",
+      "@types/react-dom": "^18.2.7",
+      "@vitejs/plugin-react": "^4.0.3",
+      "autoprefixer": "^10.4.14",
+      "eslint": "^8.45.0",
+      "eslint-plugin-react": "^7.32.2",
+      "eslint-plugin-react-hooks": "^4.6.0",
+      "eslint-plugin-react-refresh": "^0.4.3",
+      "postcss": "^8.4.27",
+      "tailwindcss": "^3.3.3",
+      "vite": "^4.4.5"
+    }
+  },
+  "vite.config.js": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\n// https://vitejs.dev/config/\nexport default defineConfig({\n  plugins: [react()],\n  server: {\n    port: 3000,\n    open: true\n  },\n  build: {\n    outDir: 'dist',\n    sourcemap: true\n  }\n})",
+  "index.html": "<!doctype html>\n<html lang=\"ja\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>演技練習サポート</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.jsx\"></script>\n  </body>\n</html>",
+  "tailwind.config.js": "/** @type {import('tailwindcss').Config} */\nexport default {\n  content: [\n    \"./index.html\",\n    \"./src/**/*.{js,ts,jsx,tsx}\",\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}",
+  "postcss.config.js": "export default {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n}",
+  ".eslintrc.cjs": "module.exports = {\n  root: true,\n  env: { browser: true, es2020: true },\n  extends: [\n    'eslint:recommended',\n    '@eslint/js/recommended',\n    'plugin:react/recommended',\n    'plugin:react/jsx-runtime',\n    'plugin:react-hooks/recommended',\n  ],\n  ignorePatterns: ['dist', '.eslintrc.cjs'],\n  parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },\n  settings: { react: { version: '18.2' } },\n  plugins: ['react-refresh'],\n  rules: {\n    'react-refresh/only-export-components': [\n      'warn',\n      { allowConstantExport: true },\n    ],\n  },\n}",
+  "src/main.jsx": "import React from 'react'\nimport ReactDOM from 'react-dom/client'\nimport App from './App.jsx'\nimport './index.css'\n\nReactDOM.createRoot(document.getElementById('root')).render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>,\n)",
+  "src/index.css": "@tailwind base;\n@tailwind components;\n@tailwind utilities;",
+  "README.md": "# 演技練習サポートアプリ\n\n大谷さん用のトーチ演技練習サポートアプリケーションです。\n\n## 機能\n\n- 🎵 音楽に合わせたタイマー機能\n- 🎭 現在と次の振り付けを左右に並べて表示\n- 📋 演技タイムライン表示\n- 🔊 次の振り付けの3秒前音声読み上げ\n- ⏯️ 再生/一時停止/リセット機能\n- ⏭️ 任意の振り付けにジャンプ機能\n\n## セットアップ\n\n### 1. 依存関係のインストール\n\n```bash\nnpm install\n```\n\n### 2. 開発サーバーの起動\n\n```bash\nnpm run dev\n```\n\nブラウザで http://localhost:3000 が自動的に開きます。\n\n### 3. プロダクションビルド\n\n```bash\nnpm run build\n```\n\n## 使い方\n\n1. **再生ボタン**で音楽に合わせたタイマーを開始\n2. **タイムライン**をクリックして特定の振り付けに移動\n3. **現在の振り付け**（緑色）と**次の振り付け**（青色）を同時に確認\n4. **矢印ボタン**で前後の振り付けに移動\n5. 次の振り付けの3秒前に音声で動きを読み上げ\n\n## 技術スタック\n\n- React 18\n- Vite\n- Tailwind CSS\n- Lucide React (アイコン)\n- Web Speech API (音声読み上げ)\n\n## プロジェクト構造\n\n```\nsrc/\n├── App.jsx          # メインコンポーネント\n├── main.jsx         # エントリーポイント\n└── index.css        # Tailwind CSSの設定\n```\n\n## 開発について\n\n- ホットリロード対応\n- ESLint設定済み\n- Tailwind CSS使用\n- 日本語音声合成対応\n"
+}
