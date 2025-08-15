@@ -1131,7 +1131,7 @@ const TimelinePage: React.FC = () => {
                           <span className="font-medium text-sm">{performer.name}</span>
                         </div>
                       </div>
-                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                      <div className="space-y-2">
                         {performerActions.length > 0 ? performerActions.map((action, actionIndex) => (
                           <div
                             key={actionIndex}
@@ -1194,7 +1194,7 @@ const TimelinePage: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-1 max-h-80 overflow-y-auto">
+                    <div className="space-y-1">
                       {performerActions.length > 0 ? (
                         performerActions.map((action, actionIndex) => {
                           const globalIndex = filteredActions.findIndex(a => a === action);
